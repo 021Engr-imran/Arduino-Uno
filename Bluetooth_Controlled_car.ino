@@ -1,3 +1,5 @@
+//this is code is writen by Engr Imran. You can edit the pin modes according to your schamatics diagram
+
 #include <SoftwareSerial.h>
 
 const int enA = A1;
