@@ -11,17 +11,21 @@ const int speakerPin = 10;  // Speaker pin
 
 int pos = 0;
 int brightness = 0;
-int seconds = 0;
+int seconds = 15; // Initial countdown value
+
 LiquidCrystal lcd_1(12, 11, 8, 7, 6, 5);
 Servo servo_9;
 
 unsigned long previousMillis = 0;     // Store the last time the LED was updated
 unsigned long previousServoMillis = 0; // Store the last time the servo was updated
 unsigned long previousButtonMillis = 0; // Store the last time buttons were checked
+unsigned long previousLCDMillis = 0; // Store the last time LCD was updated
+unsigned long previousSpeakerMillis = 0; // Store the last time tone was played
 const long interval = 500;            // Interval at which to update LED (milliseconds)
 const long servoInterval = 15;        // Interval at which to update servo (milliseconds)
 const long buttonInterval = 10;       // Interval at which to check button (milliseconds)
 const long speakerInterval = 100;     // Interval at which to play tone (milliseconds)
+const long lcdInterval = 100;        // Interval at which to update LCD (milliseconds)
 
 void setup() {
   pinMode(latchPin, OUTPUT);   // Set shift registers pins to output
@@ -33,7 +37,7 @@ void setup() {
   pinMode(speakerPin, OUTPUT);
   
   lcd_1.begin(16, 2); // Set up the number of columns and rows on the LCD
-  lcd_1.print("hello world!"); // Print a message to the LCD
+  lcd_1.print("Walk"); // Print a message to the LCD
   
   servo_9.attach(9, 500, 2500); // Attach servo motor
 }
@@ -67,11 +71,20 @@ void loop() {
     shiftOut(dataPin, clockPin, MSBFIRST, numbers[i]);
     digitalWrite(latchPin, HIGH);
 
-    i = (i + 1) % 10; // Move to the next index, wrapping around if necessary
+    i = (i + 1) % 10; // Move to the next index
+  }
 
+  // Update LCD
+  if (currentMillis - previousLCDMillis >= lcdInterval) {
+    previousLCDMillis = currentMillis;
     lcd_1.setCursor(0, 1);
     lcd_1.print(seconds); // Print the number of seconds since reset
-    seconds++;
+    seconds--;
+
+    // Reset countdown if it reaches 0
+    if (seconds < 0) {
+      seconds = 15; // Reset to 15 seconds
+    }
   }
 
   // Update servo position
@@ -88,8 +101,11 @@ void loop() {
 
   // Update for Leds
   if ((currentMillis / 500) % 2 == 0) {
-    analogWrite(1, brightness);
-    brightness = (brightness + 5) % 256; // Increment brightness
+    if (currentMillis - previousSpeakerMillis >= speakerInterval) {
+      previousSpeakerMillis = currentMillis;
+      analogWrite(1, brightness);
+      brightness = (brightness + 5) % 256; // Increment brightness
+    }
   } else {
     analogWrite(1, 0); // Turn off LED
   }
